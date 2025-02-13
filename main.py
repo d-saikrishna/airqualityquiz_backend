@@ -24,7 +24,7 @@ origins = [
     "http://localhost:3000",  # Add your frontend URL(s)
     "http://127.0.0.1:3000",  # Add your frontend URL(s)
     # Add other origins as needed (e.g., your deployed frontend URL)
-    "https://urbanemissionsinfo.github.io/airqualityquiz"
+    "https://urbanemissionsinfo.github.io"
 ]
 
 app = FastAPI()
