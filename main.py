@@ -4,11 +4,27 @@ from typing import List
 import pygsheets
 from datetime import datetime
 from fastapi.middleware.cors import CORSMiddleware  # Import the middleware
+import os
+import base64
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+
+load_dotenv()
+
+# Read the Base64-encoded JSON from the environment variable
+base64_json = os.environ.get('SERVICE_ACCOUNT_JSON_BASE64')
+if not base64_json:
+    raise ValueError("SERVICE_ACCOUNT_JSON_BASE64 environment variable not set")
+# Decode the Base64 string to get the JSON content
+json_content = base64.b64decode(base64_json).decode('utf-8')
+
+
 origins = [
     "http://localhost:3000",  # Add your frontend URL(s)
     "http://127.0.0.1:3000",  # Add your frontend URL(s)
     # Add other origins as needed (e.g., your deployed frontend URL)
-    "https://urbanemissionsinfo.github.io/airqualityquiz/"
+    "https://urbanemissionsinfo.github.io/airqualityquiz"
 ]
 
 app = FastAPI()
@@ -21,7 +37,7 @@ app.add_middleware(
 )
 
 # Google Sheets setup (using pygsheets)
-gc = pygsheets.authorize(service_file='constitutionbot-3e833b17dba1.json')  # Path to your service account key file
+gc = pygsheets.authorize(service_account_json =json_content)  # Path to your service account key file
 sh = gc.open("airqualityquiz")  # Open your Google Sheet
 wks_scores = sh.worksheet("title","Scores") # Get the Scores worksheet
 wks_questions_performance = sh.worksheet("title","Question_wise_performance") # Get the Questions wise worksheet

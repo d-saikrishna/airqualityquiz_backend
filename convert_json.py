@@ -13,4 +13,12 @@ with open(json_file_path, 'rb') as file:
     encoded_content = base64.b64encode(file_content).decode('utf-8')
 
 # Print or use the base64 encoded content
-print(encoded_content)
+#print(encoded_content)
+
+import json
+
+with open(json_file_path, "r") as f: # Use raw string for paths
+    data = json.load(f)
+
+compact_json = json.dumps(data, separators=(',', ':')) # Compact JSON
+print(compact_json)
