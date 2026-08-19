@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 import pygsheets
 from datetime import datetime
 from fastapi.middleware.cors import CORSMiddleware  # Import the middleware
@@ -45,6 +45,7 @@ wks_questions_performance = sh.worksheet("title","Question_wise_performance") # 
 class Score(BaseModel):
     quizName: str
     score: int
+    name: Optional[str] = None
     date: datetime
     question_ids: list
     responses: list
@@ -57,9 +58,13 @@ async def root():
 @app.post("/api/saveScore")
 async def save_score(request: Request, score: Score):
     try:
-        client_ip = request.client.host
+        client_ip = request.headers.get("x-forwarded-for") or request.client.host
+        if ',' in client_ip:  # If multiple IPs are forwarded, get the true original client IP
+            client_ip = client_ip.split(',')[0].strip()
+
+        username = score.name if score.name else client_ip
         # Convert datetime object to string
-        new_row = [score.quizName, score.score, client_ip, score.date.isoformat()]
+        new_row = [score.quizName, score.score, username, score.date.isoformat()]
         wks_scores.append_table(new_row)
 
         responses = score.responses
