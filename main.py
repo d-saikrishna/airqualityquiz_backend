@@ -21,8 +21,8 @@ json_content = base64.b64decode(base64_json).decode('utf-8')
 
 
 origins = [
-    "http://localhost:3000",  # Add your frontend URL(s)
-    "http://127.0.0.1:3000",  # Add your frontend URL(s)
+    "http://localhost:5500",  # Add your frontend URL(s)
+    "http://127.0.0.1:5500",  # Add your frontend URL(s)
     # Add other origins as needed (e.g., your deployed frontend URL)
     "https://urbanemissionsinfo.github.io"
 ]
@@ -41,7 +41,7 @@ gc = pygsheets.authorize(service_account_json =json_content)  # Path to your ser
 sh = gc.open("airqualityquiz")  # Open your Google Sheet
 wks_scores = sh.worksheet("title","Scores") # Get the Scores worksheet
 wks_questions_performance = sh.worksheet("title","Question_wise_performance") # Get the Questions wise worksheet
-
+wks_wordle_scores = sh.worksheet("title","Wordle")
 class Score(BaseModel):
     quizName: str
     score: int
@@ -49,6 +49,14 @@ class Score(BaseModel):
     date: datetime
     question_ids: list
     responses: list
+
+class WordleScore(BaseModel):
+    user_id: Optional[str] = None
+    score: int
+    time_taken_seconds: int
+    date: datetime
+    mode: str
+    word: str
 
 @app.get("/")  # Add a route for the root path
 async def root():
@@ -81,6 +89,32 @@ async def save_score(request: Request, score: Score):
     except Exception as e:
         print(f"Error saving score: {e}")
         raise HTTPException(status_code=500, detail="Error saving score")
+
+@app.post("/api/saveWordleScore")
+async def save_wordle_score(request: Request, wordle_score: WordleScore):
+    try:
+        client_ip = request.headers.get("x-forwarded-for") or request.client.host
+        if ',' in client_ip:
+            client_ip = client_ip.split(',')[0].strip()
+
+        username = wordle_score.user_id if wordle_score.user_id else client_ip
+        
+        # New row with mode and word added
+        new_row = [
+            username,
+            wordle_score.score,
+            wordle_score.time_taken_seconds,
+            wordle_score.mode,
+            wordle_score.word,
+            wordle_score.date.isoformat()
+        ]
+        
+        wks_wordle_scores.append_table(new_row)
+
+        return {"message": "Wordle score saved successfully"}
+    except Exception as e:
+        print(f"Error saving Wordle score: {e}")
+        raise HTTPException(status_code=500, detail="Error saving Wordle score")
 
 # @app.get("/api/leaderboard/{quiz_name}", response_model=List[Score])
 # async def get_leaderboard(quiz_name: str):
